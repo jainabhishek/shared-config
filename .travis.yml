@@ -1,0 +1,112 @@
+language: node_js
+node_js: 10
+sudo: false
+stages:
+  - name: test
+    if: type = pull_request AND tag IS blank
+  - name: compile
+    if: tag IS blank
+  - name: compile_store
+    if: branch =~ /^(release|hotfix)\/.*$/ AND tag IS blank
+  - name: compile_roll_forward
+    if: branch =~ /^(master)\/.*$/ AND tag IS blank
+
+jobs:
+  # Note: For best overall results don't cache yarn/node_modules in any job
+  include:
+    - stage: test
+      language: node_js
+      node_js: "10"
+      before_script:
+      - PATH=${PATH//:\.\/node_modules\/\.bin/}
+      script: "./scripts/travis/testPr.sh"
+      install:
+      - yarn install
+    - stage: compile
+      env:
+      - KEY_CHAIN=ios-build.keychain
+      - ENV_FLAG=prod
+      language: objective-c
+      os: osx
+      osx_image: xcode10.1
+      before_install:
+      - nvm install 10
+      - brew install yarn
+      script: "./scripts/travis/buildiOS.sh"
+    - stage: compile_store
+      env:
+      - KEY_CHAIN=ios-build.keychain
+      - ENV_FLAG=store
+      language: objective-c
+      os: osx
+      osx_image: xcode10.1
+      env:
+        - KEY_CHAIN=ios-build.keychain
+        - ENV_FLAG=store
+      before_install:
+      - nvm install 10
+      - brew install yarn
+      script: "./scripts/travis/buildiOS.sh"
+    - stage: compile_roll_forward
+      env:
+      - KEY_CHAIN=ios-build.keychain
+      - ENV_FLAG=store
+      language: objective-c
+      os: osx
+      osx_image: xcode10.1
+      before_install:
+      - nvm install 10
+      - brew install yarn
+      script: "./scripts/travis/buildiOS.sh"
+
+    - stage: compile
+      env:
+      - ANDROID_HOME=/usr/local/android-sdk
+      - ENV_FLAG=prod
+      language: android
+      os: linux
+      jdk: oraclejdk8
+      sudo: false
+      android:
+        components:
+          - build-tools-28.0.3
+          - android-28
+      before_install:
+      - nvm install 10
+      - curl -o- -L https://yarnpkg.com/install.sh | bash
+      - export PATH="$HOME/.yarn/bin:$PATH"
+      script: "./scripts/travis/buildAndroid.sh"
+    - stage: compile_store
+      env:
+      - ANDROID_HOME=/usr/local/android-sdk
+      - ENV_FLAG=store
+      language: android
+      os: linux
+      jdk: oraclejdk8
+      sudo: false
+      android:
+        components:
+          - build-tools-28.0.3
+          - android-28
+      before_install:
+      - nvm install 10
+      - curl -o- -L https://yarnpkg.com/install.sh | bash
+      - export PATH="$HOME/.yarn/bin:$PATH"
+      script: "./scripts/travis/buildAndroid.sh"
+    - stage: compile_roll_forward
+      env:
+      - ANDROID_HOME=/usr/local/android-sdk
+      - ENV_FLAG=store
+      language: android
+      os: linux
+      jdk: oraclejdk8
+      sudo: false
+      android:
+        components:
+          - build-tools-28.0.3
+          - android-28
+      before_install:
+      - nvm install 10
+      - curl -o- -L https://yarnpkg.com/install.sh | bash
+      - export PATH="$HOME/.yarn/bin:$PATH"
+      script: "./scripts/travis/buildAndroid.sh"
